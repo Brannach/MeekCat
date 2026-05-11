@@ -1,5 +1,7 @@
 # Hello World — React + Node.js
 
+[![CI](https://github.com/Brannach/MeekCat/actions/workflows/ci.yml/badge.svg)](https://github.com/Brannach/MeekCat/actions/workflows/ci.yml)
+
 A minimal full-stack web app: a React (Vite) frontend that calls a Node.js + Express backend, with Playwright UI tests, a Dockerfile for cloud deploy, and a GitHub Actions CI workflow.
 
 ## Project structure
