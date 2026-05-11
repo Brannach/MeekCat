@@ -1,0 +1,20 @@
+{
+  "name": "hello-world-react-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Simple Hello World web app with React frontend and Node.js backend, with Playwright tests and Docker deployment.",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
+    "build": "npm run build --prefix client",
+    "start": "node server/index.js",
+    "dev:server": "node server/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "test:e2e": "playwright test",
+    "test:install": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "concurrently": "^8.2.2"
+  }
+}

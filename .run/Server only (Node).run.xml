@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Server only (Node)" type="NodeJSConfigurationType" application-parameters="" path-parameters="" working-dir="$PROJECT_DIR$">
+    <envs />
+    <JavaScriptTestRunnerSettings v="2" testFileScope="CHANGED_FILES" />
+    <option name="JavaScriptTestRunnerSettings">
+      <JavaScriptTestRunnerSettings />
+    </option>
+    <option name="PATH_TO_JS_FILE" value="$PROJECT_DIR$/server/index.js" />
+    <option name="WORKING_DIR" value="$PROJECT_DIR$" />
+    <method v="2" />
+  </configuration>
+</component>
