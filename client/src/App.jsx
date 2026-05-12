@@ -1,26 +1,21 @@
-import { useEffect, useState } from 'react';
+import {Routes, Route, Link} from 'react-router-dom';
+import HomePage from './pages/HomePage.jsx';
+import AnimatorPage from './pages/AnimatorPage.jsx';
 
 export default function App() {
-  const [message, setMessage] = useState('Loading…');
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/hello')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => setMessage(data.message))
-      .catch((err) => setError(err.message));
-  }, []);
-
-  return (
-    <main className="container">
-      <h1>Hello World</h1>
-      <p data-testid="api-message" className="message">
-        {error ? `Error: ${error}` : message}
-      </p>
-      <p className="hint">React frontend talking to a Node.js + Express backend.</p>
-    </main>
-  );
+    return (
+        <div className="app">
+            <nav className="nav">
+                <Link to="/">Home</Link>
+                <Link to="/animator">Animator</Link>
+            </nav>
+            <main>
+                <Routes>
+                    <Route path="/" element={<HomePage/>}/>
+                    <Route path="/animator" element={<AnimatorPage/>}/>
+                </Routes>
+            </main>
+        </div>
+    );
 }
+
