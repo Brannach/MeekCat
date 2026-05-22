@@ -35,3 +35,21 @@ h1 {
   color: #94a3b8;
   font-size: 0.95rem;
 }
+
+.nav { display: flex; align-items: center; gap: 1.5rem; }
+.nav-links { display: flex; gap: 1rem; }
+
+.board { display: flex; gap: 1rem; align-items: flex-start; }
+.column { flex: 1; background: #f4f5f7; border-radius: 8px; padding: 0.75rem; }
+.column h2 { font-size: 0.9rem; text-transform: uppercase; color: #555; }
+.column ul { list-style: none; padding: 0; margin: 0; }
+.card { background: #fff; border-radius: 6px; padding: 0.6rem; margin-bottom: 0.6rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1); border-left: 4px solid #ccc; }
+.card.priority-high { border-left-color: #e5484d; }
+.card.priority-medium { border-left-color: #f5a623; }
+.card.priority-low { border-left-color: #30a46c; }
+.card-title { display: block; font-weight: 600; }
+.badge { font-size: 0.7rem; text-transform: uppercase; color: #888; }
+.card-actions { margin-top: 0.4rem; display: flex; gap: 0.3rem; }
+.card-actions button { cursor: pointer; }
+.add-task { display: flex; gap: 0.5rem; margin-bottom: 1rem; }

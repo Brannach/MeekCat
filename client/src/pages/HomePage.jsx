@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom';
 
 export default function HomePage() {
     return (
-        <div className="container">
+        <div className="container home">
             <h1>MeekCat</h1>
-            <p>A sprite sheet animator for 2D game assets.</p>
-            <Link to="/animator" className="cta">Open the animator →</Link>
+            <p>A lightweight project &amp; task tracker — a kanban board plus a roadmap view.</p>
+            <Link to="/board" className="cta">Open the board</Link>
         </div>
     );
 }
