@@ -1,8 +1,8 @@
 export default function RoadmapPage() {
     return (
-        <div className="container">
-            <h1>Roadmap</h1>
-            <p>Coming soon — milestones on a timeline.</p>
+        <div>
+            <h1 className="page-title">Roadmap</h1>
+            <p className="muted">Coming soon — milestones on a timeline.</p>
         </div>
     );
 }

@@ -15,6 +15,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
-    "concurrently": "^8.2.2"
+    "@tailwindcss/vite": "^4.3.0",
+    "concurrently": "^8.2.2",
+    "tailwindcss": "^4.3.0"
   }
 }

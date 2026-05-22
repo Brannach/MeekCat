@@ -45,42 +45,48 @@ export default function BoardPage() {
     }
 
     return (
-        <div className="container">
-            <h1>Board</h1>
+        <div>
+            <h1 className="page-title">Board</h1>
 
-            <form className="add-task" onSubmit={addTask}>
+            <form onSubmit={addTask} className="form-row">
                 <input
                     aria-label="Task title"
                     placeholder="New task title"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
+                    className="input"
                 />
-                <select aria-label="Priority" value={priority} onChange={e => setPriority(e.target.value)}>
+                <select aria-label="Priority" value={priority} onChange={e => setPriority(e.target.value)} className="select">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                 </select>
-                <button type="submit">Add task</button>
+                <button type="submit" className="btn-primary">Add task</button>
             </form>
 
             <div className="board">
                 {STATUSES.map((col, colIndex) => {
                     const columnTasks = tasks.filter(task => task.status === col.key);
                     return (
-                        <section className="column" key={col.key} aria-label={col.label}>
-                            <h2>{col.label} ({columnTasks.length})</h2>
-                            <ul>
+                        <section key={col.key} aria-label={col.label} className="column">
+                            <h2 className="column-title">
+                                {col.label}
+                                <span className="column-count">{columnTasks.length}</span>
+                            </h2>
+                            <ul className="card-list">
                                 {columnTasks.map(task => (
-                                    <li className={`card priority-${task.priority}`} key={task.id}>
-                                        <span className="card-title">{task.title}</span>
-                                        <span className="badge">{task.priority}</span>
+                                    <li key={task.id} className={`card border-priority-${task.priority}`}>
+                                        <div className="card-header">
+                                            <span className="card-title">{task.title}</span>
+                                            <span className={`badge badge-priority-${task.priority}`}>{task.priority}</span>
+                                        </div>
                                         <div className="card-actions">
                                             <button onClick={() => moveTask(task.id, -1)} disabled={colIndex === 0}
-                                                    aria-label={`Move "${task.title}" left`}>◀</button>
+                                                    aria-label={`Move "${task.title}" left`} className="btn-icon">◀</button>
                                             <button onClick={() => moveTask(task.id, 1)} disabled={colIndex === STATUSES.length - 1}
-                                                    aria-label={`Move "${task.title}" right`}>▶</button>
+                                                    aria-label={`Move "${task.title}" right`} className="btn-icon">▶</button>
                                             <button onClick={() => deleteTask(task.id)}
-                                                    aria-label={`Delete "${task.title}"`}>✕</button>
+                                                    aria-label={`Delete "${task.title}"`} className="btn-icon-danger">✕</button>
                                         </div>
                                     </li>
                                 ))}

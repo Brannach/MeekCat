@@ -5,15 +5,15 @@ import RoadmapPage from './pages/RoadmapPage.jsx';
 
 export default function App() {
     return (
-        <div className="app">
+        <div className="app-shell">
             <nav className="nav">
-                <Link to="/" className="brand">MeekCat</Link>
+                <Link to="/" className="nav-brand">MeekCat</Link>
                 <div className="nav-links">
-                    <Link to="/board">Board</Link>
-                    <Link to="/roadmap">Roadmap</Link>
+                    <Link to="/board" className="nav-link">Board</Link>
+                    <Link to="/roadmap" className="nav-link">Roadmap</Link>
                 </div>
             </nav>
-            <main>
+            <main className="main">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
                     <Route path="/board" element={<BoardPage />} />
