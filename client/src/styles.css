@@ -1,49 +1,55 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Layout */
-.app-shell { @apply min-h-screen bg-slate-50 text-slate-800; }
-.nav { @apply flex items-center gap-6 border-b border-slate-200 bg-white px-6 py-3 shadow-sm; }
-.nav-brand { @apply text-lg font-bold text-slate-900; }
+.app-shell { @apply min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100; }
+.nav { @apply flex items-center gap-6 border-b border-slate-200 bg-white px-6 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800; }
+.nav-brand { @apply text-lg font-bold text-slate-900 dark:text-white; }
 .nav-links { @apply flex gap-1; }
-.nav-link { @apply rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
+.nav-link { @apply rounded-md px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white; }
 .main { @apply mx-auto max-w-6xl px-6 py-8; }
 
 /* Home */
 .hero { @apply mx-auto max-w-2xl py-16 text-center; }
-.hero-title { @apply text-4xl font-bold tracking-tight text-slate-900; }
-.hero-subtitle { @apply mt-4 text-lg text-slate-600; }
+.hero-title { @apply text-4xl font-bold tracking-tight text-slate-900 dark:text-white; }
+.hero-subtitle { @apply mt-4 text-lg text-slate-600 dark:text-slate-300; }
 
 /* Generic */
-.page-title { @apply mb-6 text-2xl font-bold text-slate-900; }
-.muted { @apply mt-2 text-slate-600; }
+.page-title { @apply mb-6 text-2xl font-bold text-slate-900 dark:text-white; }
+.muted { @apply mt-2 text-slate-600 dark:text-slate-400; }
 
 /* Buttons */
 .btn-primary { @apply rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700; }
 .btn-cta { @apply mt-8 inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-700; }
-.btn-icon { @apply rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40; }
-.btn-icon-danger { @apply ml-auto rounded-md border border-slate-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50; }
+.btn-icon { @apply rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-600; }
+.btn-icon-danger { @apply ml-auto rounded-md border border-slate-200 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 dark:border-slate-600 dark:hover:bg-rose-950; }
 
 /* Add-task form */
 .form-row { @apply mb-8 flex flex-wrap items-center gap-3; }
-.input { @apply min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500; }
-.select { @apply rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500; }
+.input { @apply min-w-[200px] flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100; }
+.select { @apply rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100; }
 
 /* Board */
 .board { @apply grid grid-cols-1 gap-4 md:grid-cols-3; }
-.column { @apply rounded-xl bg-slate-100 p-3; }
-.column-title { @apply mb-3 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500; }
-.column-count { @apply rounded-full bg-slate-200 px-2 py-0.5 text-slate-600; }
+.column { @apply rounded-xl bg-slate-100 p-3 dark:bg-slate-800; }
+.column-title { @apply mb-3 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400; }
+.column-count { @apply rounded-full bg-slate-200 px-2 py-0.5 text-slate-600 dark:bg-slate-700 dark:text-slate-300; }
 .card-list { @apply space-y-3; }
-.card { @apply rounded-lg border-l-4 bg-white p-3 shadow-sm; }
+.card { @apply rounded-lg border-l-4 bg-white p-3 shadow-sm dark:bg-slate-700; }
 .card-header { @apply flex items-start justify-between gap-2; }
-.card-title { @apply font-medium text-slate-800; }
+.card-title { @apply font-medium text-slate-800 dark:text-slate-100; }
 .card-actions { @apply mt-3 flex gap-1; }
 .badge { @apply shrink-0 rounded-full px-2 py-0.5 text-xs font-medium; }
 
-/* Priority accents (referenced dynamically, so kept as plain rules) */
+/* Priority accents */
 .border-priority-high { @apply border-l-rose-500; }
 .border-priority-medium { @apply border-l-amber-500; }
 .border-priority-low { @apply border-l-emerald-500; }
 .badge-priority-high { @apply bg-rose-100 text-rose-700; }
 .badge-priority-medium { @apply bg-amber-100 text-amber-700; }
 .badge-priority-low { @apply bg-emerald-100 text-emerald-700; }
+
+/* Settings */
+.setting-row { @apply flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800; }
+.setting-label { @apply font-medium text-slate-800 dark:text-slate-100; }
+.theme-toggle { @apply rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700; }
