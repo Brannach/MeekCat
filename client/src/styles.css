@@ -53,3 +53,26 @@
 .setting-row { @apply flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800; }
 .setting-label { @apply font-medium text-slate-800 dark:text-slate-100; }
 .theme-toggle { @apply rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700; }
+
+/* Roadmap (Gantt) */
+.gantt { @apply overflow-x-auto rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800; }
+.gantt-header, .gantt-row { @apply flex items-stretch; }
+.gantt-row { @apply border-t border-slate-100 dark:border-slate-700; }
+.lane-label-spacer { @apply w-40 shrink-0; }
+.lane-label { @apply flex w-40 shrink-0 items-center rounded-md px-3 py-4 text-sm font-semibold leading-tight text-white; }
+.lane-track { @apply relative min-h-14 flex-1; }
+.axis-track { @apply min-h-0 h-7; }
+.axis-label { @apply absolute top-1 pl-1 text-xs font-semibold text-slate-500 dark:text-slate-400; }
+.gridline { @apply absolute bottom-0 top-0 w-px bg-slate-200 dark:bg-slate-700; }
+.bar { @apply absolute top-1/2 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded-md px-2 text-xs font-medium text-white shadow-sm; }
+.bar-label { @apply truncate; }
+
+/* category colors */
+.cat-planning { @apply bg-amber-400 text-slate-900; }
+.cat-strategy { @apply bg-orange-500; }
+.cat-dev      { @apply bg-green-600; }
+.cat-bi       { @apply bg-blue-600; }
+.cat-planning-bar { @apply bg-amber-400 text-slate-900; }
+.cat-strategy-bar { @apply bg-orange-500; }
+.cat-dev-bar      { @apply bg-green-600; }
+.cat-bi-bar       { @apply bg-blue-600; }
