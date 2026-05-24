@@ -24,6 +24,8 @@ const CATEGORIES = [
     { key: 'bi',       label: 'Business Intelligence', color: 'cat-bi' },
 ];
 
+let nextItemId = 12;
+
 const initialItems = [
     { id: 1,  category: 'planning', title: 'Vision',              start: '2026-01-02', end: '2026-03-31', percent: 100 },
     { id: 2,  category: 'planning', title: 'Strategic Intent',    start: '2026-04-07', end: '2026-06-30', percent: 100 },
@@ -58,12 +60,47 @@ function formatShort(dateStr) {
 }
 
 export default function RoadmapPage() {
-    const [items] = useState(initialItems);
+    const [items, setItems] = useState(initialItems);
     const [milestones] = useState(initialMilestones);
+
+    const [title, setTitle] = useState('');
+    const [category, setCategory] = useState('planning');
+    const [start, setStart] = useState('');
+    const [end, setEnd] = useState('');
+    const [percent, setPercent] = useState('');
+
+    function addItem(e) {
+        e.preventDefault();
+        const trimmed = title.trim();
+        if (!trimmed || !start || !end) return;
+        if (end < start) return; // ISO date strings (YYYY-MM-DD) compare correctly as text
+        const pct = Math.min(100, Math.max(0, Number(percent) || 0)); // clamp into 0–100
+        setItems(prev => [...prev, { id: nextItemId++, category, title: trimmed, start, end, percent: pct }]);
+        setTitle('');
+        setStart('');
+        setEnd('');
+        setPercent('');
+        // leave the category selected, so adding several to one lane is quick
+    }
 
     return (
         <div>
             <h1 className="page-title">Roadmap</h1>
+
+            <form onSubmit={addItem} className="form-row">
+                <input aria-label="Task title" placeholder="New task" value={title}
+                       onChange={e => setTitle(e.target.value)} className="input" />
+                <select aria-label="Category" value={category} onChange={e => setCategory(e.target.value)} className="select">
+                    {CATEGORIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                </select>
+                <input aria-label="Start date" type="date" value={start}
+                       onChange={e => setStart(e.target.value)} className="select" />
+                <input aria-label="End date" type="date" value={end}
+                       onChange={e => setEnd(e.target.value)} className="select" />
+                <input aria-label="Percent complete" type="number" min="0" max="100" placeholder="% done"
+                       value={percent} onChange={e => setPercent(e.target.value)} className="select" />
+                <button type="submit" className="btn-primary">Add task</button>
+            </form>
 
             <div className="gantt">
                 {/* time axis with review flags */}
@@ -99,11 +136,13 @@ export default function RoadmapPage() {
                                 const left = toPct(item.start);
                                 const width = toPct(item.end) - left;
                                 return (
-                                    <div key={item.id}
-                                         className={`bar ${cat.color}-bar`}
-                                         style={{ left: `${left}%`, width: `${width}%` }}
-                                         aria-label={`${item.title}, ${item.percent}% complete`}>
-                                        <span className="bar-label">{item.title}</span>
+                                    <div key={item.id} className="bar-wrap" style={{ left: `${left}%`, width: `${width}%` }}>
+                                        <div className={`bar ${cat.color}-bar`}
+                                             aria-label={`${item.title}, ${item.percent}% complete, ${formatShort(item.start)} to ${formatShort(item.end)}`}>
+                                            <span className="bar-label">{item.title}</span>
+                                            <span className="bar-pct">{item.percent}%</span>
+                                        </div>
+                                        <span className="bar-caption">{formatShort(item.start)} – {formatShort(item.end)}</span>
                                     </div>
                                 );
                             })}
