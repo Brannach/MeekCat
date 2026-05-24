@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// The chart spans one calendar year; every position is a % of this window.
 const DOMAIN_START = '2026-01-01';
 const DOMAIN_END   = '2027-01-01';
 
@@ -9,6 +8,13 @@ const QUARTERS = [
     { key: 'Q2', start: '2026-04-01' },
     { key: 'Q3', start: '2026-07-01' },
     { key: 'Q4', start: '2026-10-01' },
+];
+
+const REVIEWS = [
+    { key: 'r1', label: 'Q1 Review', date: '2026-03-31' },
+    { key: 'r2', label: 'Q2 Review', date: '2026-06-30' },
+    { key: 'r3', label: 'Q3 Review', date: '2026-09-30' },
+    { key: 'r4', label: 'Q4 Review', date: '2026-12-20' },
 ];
 
 const CATEGORIES = [
@@ -32,21 +38,35 @@ const initialItems = [
     { id: 11, category: 'bi',       title: 'Real-Time Analytics', start: '2026-09-01', end: '2026-12-15', percent: 0 },
 ];
 
+const initialMilestones = [
+    { id: 1, category: 'planning', title: 'Vision approved',  date: '2026-02-15' },
+    { id: 2, category: 'strategy', title: 'SWOT complete',    date: '2026-03-20' },
+    { id: 3, category: 'strategy', title: 'Final Price List', date: '2026-07-15' },
+    { id: 4, category: 'dev',      title: 'Alpha',            date: '2026-05-20' },
+    { id: 5, category: 'dev',      title: 'Public Beta',      date: '2026-08-10' },
+    { id: 6, category: 'dev',      title: 'Go Live!',         date: '2026-12-20' },
+];
+
 function toPct(dateStr) {
     const span   = new Date(DOMAIN_END) - new Date(DOMAIN_START);
     const offset = new Date(dateStr)    - new Date(DOMAIN_START);
     return (offset / span) * 100;
 }
 
+function formatShort(dateStr) {
+    return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function RoadmapPage() {
     const [items] = useState(initialItems);
+    const [milestones] = useState(initialMilestones);
 
     return (
         <div>
             <h1 className="page-title">Roadmap</h1>
 
             <div className="gantt">
-                {/* time axis */}
+                {/* time axis with review flags */}
                 <div className="gantt-header">
                     <div className="lane-label-spacer" />
                     <div className="lane-track axis-track">
@@ -54,6 +74,14 @@ export default function RoadmapPage() {
                             <span key={q.key} className="axis-label" style={{ left: `${toPct(q.start)}%` }}>
                 {q.key}
               </span>
+                        ))}
+                        {REVIEWS.map(r => (
+                            <div key={r.key} className="review" style={{ left: `${toPct(r.date)}%` }}
+                                 aria-label={`${r.label}, ${formatShort(r.date)}`} title={r.label}>
+                                <span className="review-label">{r.label}</span>
+                                <span className="review-date">{formatShort(r.date)}</span>
+                                <span className="review-flag" />
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -66,6 +94,7 @@ export default function RoadmapPage() {
                             {QUARTERS.map(q => (
                                 <div key={q.key} className="gridline" style={{ left: `${toPct(q.start)}%` }} />
                             ))}
+
                             {items.filter(i => i.category === cat.key).map(item => {
                                 const left = toPct(item.start);
                                 const width = toPct(item.end) - left;
@@ -78,6 +107,14 @@ export default function RoadmapPage() {
                                     </div>
                                 );
                             })}
+
+                            {milestones.filter(m => m.category === cat.key).map(m => (
+                                <div key={m.id} className="lane-milestone" style={{ left: `${toPct(m.date)}%` }}>
+                                    <span className="lane-milestone-label" title={m.title}>{m.title}</span>
+                                    <span className="lane-milestone-marker"
+                                          aria-label={`Milestone: ${m.title}, ${formatShort(m.date)}`} title={m.title} />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 ))}
