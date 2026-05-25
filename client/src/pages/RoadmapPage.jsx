@@ -59,6 +59,12 @@ function formatShort(dateStr) {
     return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function todayISO() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 export default function RoadmapPage() {
     const [items, setItems] = useState(initialItems);
     const [milestones] = useState(initialMilestones);
@@ -68,6 +74,11 @@ export default function RoadmapPage() {
     const [start, setStart] = useState('');
     const [end, setEnd] = useState('');
     const [percent, setPercent] = useState('');
+
+    const today = todayISO();
+    const todayPct = toPct(today);
+    const showToday = todayPct >= 0 && todayPct <= 100; // hide if outside the 2026 domain
+
 
     function addItem(e) {
         e.preventDefault();
@@ -120,6 +131,12 @@ export default function RoadmapPage() {
                                 <span className="review-flag" />
                             </div>
                         ))}
+                        {showToday && (
+                            <div className="today-marker" style={{ left: `${todayPct}%` }}
+                                 aria-label={`Today, ${formatShort(today)}`} title={`Today — ${formatShort(today)}`}>
+                                <span className="today-label">Today</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -131,6 +148,9 @@ export default function RoadmapPage() {
                             {QUARTERS.map(q => (
                                 <div key={q.key} className="gridline" style={{ left: `${toPct(q.start)}%` }} />
                             ))}
+                            {showToday && (
+                                <div className="today-line" style={{ left: `${todayPct}%` }} aria-hidden="true" />
+                            )}
 
                             {items.filter(i => i.category === cat.key).map(item => {
                                 const left = toPct(item.start);
