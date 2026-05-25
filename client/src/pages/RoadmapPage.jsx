@@ -65,6 +65,24 @@ function todayISO() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// rem geometry for stacked bars
+const ROW_TOP = 0.75;    // space above the first bar
+const ROW_STRIDE = 2.5;  // vertical step from one stacked bar to the next
+
+// Greedy lane packing: give each bar the first sub-row that's free at its start.
+// Returns the items annotated with a `row`, plus how many rows the lane needs.
+function assignRows(laneItems) {
+    const sorted = [...laneItems].sort((a, b) => a.start.localeCompare(b.start));
+    const rowEnds = [];                                          // rowEnds[r] = end date of the last bar in row r
+    const placed = sorted.map(item => {
+        let row = rowEnds.findIndex(end => end <= item.start);   // a row is free if its last bar already ended
+        if (row === -1) row = rowEnds.length;                    // none free -> open a new row
+        rowEnds[row] = item.end;                                 // this row now ends where the new bar ends
+        return { ...item, row };
+    });
+    return { placed, rowCount: rowEnds.length || 1 };
+}
+
 export default function RoadmapPage() {
     const [items, setItems] = useState(initialItems);
     const [milestones] = useState(initialMilestones);
@@ -141,42 +159,47 @@ export default function RoadmapPage() {
                 </div>
 
                 {/* one row per category */}
-                {CATEGORIES.map(cat => (
-                    <div key={cat.key} className="gantt-row">
-                        <div className={`lane-label ${cat.color}`}>{cat.label}</div>
-                        <div className="lane-track">
-                            {QUARTERS.map(q => (
-                                <div key={q.key} className="gridline" style={{ left: `${toPct(q.start)}%` }} />
-                            ))}
-                            {showToday && (
-                                <div className="today-line" style={{ left: `${todayPct}%` }} aria-hidden="true" />
-                            )}
+                {CATEGORIES.map(cat => {
+                    const { placed, rowCount } = assignRows(items.filter(i => i.category === cat.key));
+                    const laneHeight = `${Math.max(4, ROW_TOP + rowCount * ROW_STRIDE + 0.5)}rem`;
+                    return (
+                        <div key={cat.key} className="gantt-row">
+                            <div className={`lane-label ${cat.color}`}>{cat.label}</div>
+                            <div className="lane-track" style={{ minHeight: laneHeight }}>
+                                {QUARTERS.map(q => (
+                                    <div key={q.key} className="gridline" style={{ left: `${toPct(q.start)}%` }} />
+                                ))}
+                                {showToday && (
+                                    <div className="today-line" style={{ left: `${todayPct}%` }} aria-hidden="true" />
+                                )}
 
-                            {items.filter(i => i.category === cat.key).map(item => {
-                                const left = toPct(item.start);
-                                const width = toPct(item.end) - left;
-                                return (
-                                    <div key={item.id} className="bar-wrap" style={{ left: `${left}%`, width: `${width}%` }}>
-                                        <div className={`bar ${cat.color}-bar`}
-                                             aria-label={`${item.title}, ${item.percent}% complete, ${formatShort(item.start)} to ${formatShort(item.end)}`}>
-                                            <span className="bar-label">{item.title}</span>
-                                            <span className="bar-pct">{item.percent}%</span>
+                                {placed.map(item => {
+                                    const left = toPct(item.start);
+                                    const width = toPct(item.end) - left;
+                                    return (
+                                        <div key={item.id} className="bar-wrap"
+                                             style={{ left: `${left}%`, width: `${width}%`, top: `${ROW_TOP + item.row * ROW_STRIDE}rem` }}>
+                                            <div className={`bar ${cat.color}-bar`}
+                                                 aria-label={`${item.title}, ${item.percent}% complete, ${formatShort(item.start)} to ${formatShort(item.end)}`}>
+                                                <span className="bar-label">{item.title}</span>
+                                                <span className="bar-pct">{item.percent}%</span>
+                                            </div>
+                                            <span className="bar-caption">{formatShort(item.start)} – {formatShort(item.end)}</span>
                                         </div>
-                                        <span className="bar-caption">{formatShort(item.start)} – {formatShort(item.end)}</span>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
 
-                            {milestones.filter(m => m.category === cat.key).map(m => (
-                                <div key={m.id} className="lane-milestone" style={{ left: `${toPct(m.date)}%` }}>
-                                    <span className="lane-milestone-label" title={m.title}>{m.title}</span>
-                                    <span className="lane-milestone-marker"
-                                          aria-label={`Milestone: ${m.title}, ${formatShort(m.date)}`} title={m.title} />
-                                </div>
-                            ))}
+                                {milestones.filter(m => m.category === cat.key).map(m => (
+                                    <div key={m.id} className="lane-milestone" style={{ left: `${toPct(m.date)}%` }}>
+                                        <span className="lane-milestone-label" title={m.title}>{m.title}</span>
+                                        <span className="lane-milestone-marker"
+                                              aria-label={`Milestone: ${m.title}, ${formatShort(m.date)}`} title={m.title} />
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
