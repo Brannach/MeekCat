@@ -7,13 +7,13 @@ COPY client/ ./
 RUN npm run build
 
 # --- Stage 2: install server deps ---
-FROM node:20-alpine AS server-deps
+FROM node:20-bookworm-slim AS server-deps
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci --omit=dev
 
 # --- Stage 3: final runtime image ---
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
