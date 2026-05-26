@@ -93,4 +93,42 @@ app.delete('/api/board/tasks/:id', (req, res) => {
   res.status(204).end();
 });
 
+const CATEGORIES = ['planning', 'strategy', 'dev', 'bi'];
+const isIsoDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+// Roadmap: list items
+app.get('/api/roadmap/items', (req, res) => {
+  const items = db
+      .prepare('SELECT id, category, title, start_date AS start, end_date AS end, percent FROM roadmap_items ORDER BY id')
+      .all();
+  res.json(items);
+});
+
+// Roadmap: create item
+app.post('/api/roadmap/items', (req, res) => {
+  const { category, title, start, end, percent = 0 } = req.body || {};
+  const trimmed = typeof title === 'string' ? title.trim() : '';
+  if (!CATEGORIES.includes(category))            return res.status(400).json({ error: 'invalid category' });
+  if (!trimmed)                                  return res.status(400).json({ error: 'title is required' });
+  if (!isIsoDate(start) || !isIsoDate(end))      return res.status(400).json({ error: 'start/end must be YYYY-MM-DD' });
+  if (end < start)                               return res.status(400).json({ error: 'end must be on or after start' });
+  const pct = Math.min(100, Math.max(0, Number(percent) || 0));
+
+  const info = db
+      .prepare('INSERT INTO roadmap_items (category, title, start_date, end_date, percent) VALUES (?, ?, ?, ?, ?)')
+      .run(category, trimmed, start, end, pct);
+  const item = db
+      .prepare('SELECT id, category, title, start_date AS start, end_date AS end, percent FROM roadmap_items WHERE id = ?')
+      .get(info.lastInsertRowid);
+  res.status(201).json(item);
+});
+
+// Roadmap: list milestones (read-only for now — UI doesn't add/delete them)
+app.get('/api/roadmap/milestones', (req, res) => {
+  const milestones = db
+      .prepare('SELECT id, category, title, date FROM roadmap_milestones ORDER BY id')
+      .all();
+  res.json(milestones);
+});
+
 module.exports = app;
