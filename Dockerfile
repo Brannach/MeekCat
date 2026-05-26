@@ -9,6 +9,13 @@ RUN npm run build
 # --- Stage 2: install server deps ---
 FROM node:20-bookworm-slim AS server-deps
 WORKDIR /app/server
+
+# better-sqlite3 has no prebuilt for this Node/libc combo, so compile from source.
+# These build tools live in this stage only — the final image stays slim.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY server/package*.json ./
 RUN npm ci --omit=dev
 
