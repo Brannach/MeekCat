@@ -88,7 +88,7 @@ function seedIfEmpty() {
     seed();
 }
 
-function resetToSeed() {
+function resetAll() {
     const wipe = db.transaction(() => {
         db.exec('DELETE FROM board_tasks');
         db.exec('DELETE FROM roadmap_items');
@@ -96,9 +96,8 @@ function resetToSeed() {
         db.exec(`DELETE FROM sqlite_sequence WHERE name IN ('board_tasks','roadmap_items','roadmap_milestones')`);
     });
     wipe();
-    seedIfEmpty();
 }
 
 seedIfEmpty();
 
-module.exports = { db, resetToSeed };
+module.exports = { db, resetAll };

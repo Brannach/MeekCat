@@ -1,8 +1,10 @@
 const express = require('express');
 const path = require('path');
+const { db, resetAll } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
 // API route
 app.get('/api/hello', (req, res) => {
@@ -27,10 +29,6 @@ app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
 const STATUSES = ['todo', 'in-progress', 'done'];
 const PRIORITIES = ['low', 'medium', 'high'];
 
@@ -48,6 +46,14 @@ app.post('/api/board/tasks', (req, res) => {
       .prepare('SELECT id, title, status, priority FROM board_tasks WHERE id = ?')
       .get(info.lastInsertRowid);
   res.status(201).json(task);
+});
+
+// Board: list tasks
+app.get('/api/board/tasks', (req, res) => {
+  const tasks = db
+      .prepare('SELECT id, title, status, priority FROM board_tasks ORDER BY id')
+      .all();
+  res.json(tasks);
 });
 
 // Board: update (any subset of title/status/priority)
@@ -129,6 +135,18 @@ app.get('/api/roadmap/milestones', (req, res) => {
       .prepare('SELECT id, category, title, date FROM roadmap_milestones ORDER BY id')
       .all();
   res.json(milestones);
+});
+
+// Test-only: wipe all data. Disabled in production.
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/test/reset', (req, res) => {
+    resetAll();
+    res.status(204).end();
+  });
+}
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
 
 module.exports = app;
