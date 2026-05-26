@@ -364,3 +364,5 @@ revision, so you don't pay for multiple running copies.
 | GHCR push returns 403                                | Ensure `permissions: packages: write` on the `docker` job           |
 | Container App won't pull the image                   | Make the GHCR package **Public**                                     |
 | `azure/login` fails in CI                            | Ensure `permissions: id-token: write` and the federated subject matches `repo:<owner>/<repo>:ref:refs/heads/main` |
+| `AADSTS70025: ... has no configured federated identity credentials` | The app registration has **no** federated credential — add one (Part 6b). Confirm with `az ad app federated-credential list --id <APP_ID> -o table`. |
+| `AADSTS700213: No matching federated identity record` | A credential exists but the subject doesn't match. It's **case-sensitive** — use your repo's exact casing (e.g. `repo:Brannach/MeekCat:ref:refs/heads/main`, from the Actions log). |
