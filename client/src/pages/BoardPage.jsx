@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const STATUSES = [
     { key: 'todo', label: 'To Do' },
@@ -6,44 +6,59 @@ const STATUSES = [
     { key: 'done', label: 'Done' },
 ];
 
-let nextId = 4;
-
-const initialTasks = [
-    { id: 1, title: 'Set up the project board', status: 'done', priority: 'high' },
-    { id: 2, title: 'Design the task card', status: 'in-progress', priority: 'medium' },
-    { id: 3, title: 'Write the first Playwright test', status: 'todo', priority: 'high' },
-];
-
 export default function BoardPage() {
-    const [tasks, setTasks] = useState(initialTasks);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [title, setTitle] = useState('');
     const [priority, setPriority] = useState('medium');
 
-    function addTask(e) {
+    useEffect(() => {
+        fetch('/api/board/tasks')
+            .then(r => r.json())
+            .then(data => { setTasks(data); setLoading(false); })
+            .catch(err => { console.error('Failed to load tasks', err); setLoading(false); });
+    }, []);
+
+    async function addTask(e) {
         e.preventDefault();
         const trimmed = title.trim();
         if (!trimmed) return;
-        setTasks(prev => [...prev, { id: nextId++, title: trimmed, status: 'todo', priority }]);
+        const res = await fetch('/api/board/tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: trimmed, priority }),
+        });
+        if (!res.ok) { console.error('Add failed', await res.text()); return; }
+        const created = await res.json();
+        setTasks(prev => [...prev, created]);
         setTitle('');
         setPriority('medium');
     }
 
-    function moveTask(id, direction) {
-        setTasks(prev =>
-            prev.map(task => {
-                if (task.id !== id) return task;
-                const order = STATUSES.map(s => s.key);
-                const i = order.indexOf(task.status);
-                const next = Math.min(Math.max(i + direction, 0), order.length - 1);
-                return { ...task, status: order[next] };
-            })
-        );
+    async function moveTask(id, direction) {
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        const order = STATUSES.map(s => s.key);
+        const i = order.indexOf(task.status);
+        const nextStatus = order[Math.min(Math.max(i + direction, 0), order.length - 1)];
+        if (nextStatus === task.status) return; // already at an edge — nothing to do
+
+        const res = await fetch(`/api/board/tasks/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: nextStatus }),
+        });
+        if (!res.ok) { console.error('Move failed', await res.text()); return; }
+        const updated = await res.json();
+        setTasks(prev => prev.map(t => t.id === id ? updated : t));
     }
 
-    function deleteTask(id) {
-        setTasks(prev => prev.filter(task => task.id !== id));
+    async function deleteTask(id) {
+        const res = await fetch(`/api/board/tasks/${id}`, { method: 'DELETE' });
+        if (!res.ok) { console.error('Delete failed', await res.text()); return; }
+        setTasks(prev => prev.filter(t => t.id !== id));
     }
-
+    
     return (
         <div>
             <h1 className="page-title">Board</h1>
