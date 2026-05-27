@@ -1,13 +1,13 @@
 {
-  "name": "hello-world-react-node",
+  "name": "meekcat-react-node",
   "version": "1.0.0",
   "private": true,
-  "description": "Simple Hello World web app with React frontend and Node.js backend, with Playwright tests and Docker deployment.",
+  "description": "Simple board/roadmap web app with React frontend and Node.js backend, with Playwright tests and Docker deployment.",
   "scripts": {
     "install:all": "npm install && npm install --prefix client && npm install --prefix server",
     "build": "npm run build --prefix client",
     "start": "node server/index.js",
-    "dev:server": "node server/index.js",
+    "dev:server": "cross-env SEED_DB=true node server/index.js",
     "dev:client": "npm run dev --prefix client",
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
     "test:e2e": "playwright test",
@@ -17,6 +17,7 @@
     "@playwright/test": "^1.45.0",
     "@tailwindcss/vite": "^4.3.0",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "tailwindcss": "^4.3.0"
   }
 }

@@ -98,6 +98,4 @@ function resetAll() {
     wipe();
 }
 
-seedIfEmpty();
-
-module.exports = { db, resetAll };
+module.exports = { db, resetAll, seedIfEmpty };

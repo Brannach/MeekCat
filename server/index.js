@@ -1,10 +1,16 @@
 const express = require('express');
 const path = require('path');
-const { db, resetAll } = require('./db');
+const { db, resetAll, seedIfEmpty } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.json());
+
+// Seed demo data only when explicitly asked. Local dev sets SEED_DB=true;
+// tests and production both leave it unset and start with an empty DB.
+if (process.env.SEED_DB === 'true') {
+  seedIfEmpty();
+}
 
 // API route
 app.get('/api/hello', (req, res) => {
