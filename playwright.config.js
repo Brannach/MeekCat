@@ -27,7 +27,7 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      DB_PATH: ':memory:',
+      DATABASE_URL: ':memory:',
     },
   },
 });
