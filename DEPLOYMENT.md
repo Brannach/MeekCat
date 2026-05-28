@@ -18,27 +18,38 @@ GitHub Actions (.github/workflows/ci.yml)
   3. deploy  → tells Azure to roll the Container App to the new image
       │
       ▼
-GHCR (ghcr.io/<you>/meekcat)  ──pull──►  Azure Container Apps  ──►  public URL
-   (free public registry)                  (free monthly grant)
+GHCR (ghcr.io/<you>/meekcat)
+   (free public image registry)
+      │
+      ▼ pull
+Azure Container Apps                ──libSQL──►  Turso  (free SQLite cloud)
+   (free monthly grant; scale-to-zero)             persistent across deploys
+      │
+      ▼
+  public URL
 ```
 
 - **Image registry:** GitHub Container Registry (GHCR) — free for public images.
 - **Host:** Azure Container Apps, consumption plan, scale-to-zero — stays inside
   the free monthly grant for low traffic.
+- **Database:** Turso (libSQL / SQLite-compatible) on its free Starter plan —
+  data lives outside the deploy cycle so redeploys don't wipe it.
 - **Live URL:** https://meekcat.livelysky-e7562e25.brazilsouth.azurecontainerapps.io
 
 ### Resource names used throughout
 
-| Thing                  | Value                          |
-|------------------------|--------------------------------|
-| Resource group         | `meekcat-rg`                   |
-| Container Apps env      | `meekcat-env`                  |
-| Container App          | `meekcat`                      |
-| Region                 | `brazilsouth`                  |
-| Container port         | `3000` (matches `EXPOSE` / server `PORT`) |
-| Image                  | `ghcr.io/<your-username>/meekcat` |
+| Thing                    | Value                                                |
+|--------------------------|------------------------------------------------------|
+| Resource group           | `meekcat-rg`                                         |
+| Container Apps env       | `meekcat-env`                                        |
+| Container App            | `meekcat`                                            |
+| Region                   | `brazilsouth`                                        |
+| Container port           | `3000` (matches `EXPOSE` / server `PORT`)            |
+| Image                    | `ghcr.io/<your-username>/meekcat`                    |
+| Turso database URL       | `libsql://<dbname>-<your-username>.<region>.turso.io`|
+| Container Apps secret    | `database-auth-token`                                |
 
-Replace `<your-username>` (and any `<...>` placeholder) with your real values.
+Replace `<your-username>` and any `<...>` placeholder with your real values.
 
 ---
 
@@ -150,6 +161,13 @@ two tags: `:latest` and the commit `:<sha>`.
 > After adding them, run `npm install --prefix client` and commit the updated
 > `client/package-lock.json`.
 
+> **Gotcha — `@libsql/client` native build in Docker:** the libSQL client has a
+> small native component. The Dockerfile uses `node:20-bookworm-slim` (glibc) for
+> the server-deps and runtime stages, and installs `python3 make g++` in the
+> server-deps stage so `node-gyp` can compile from source when a prebuilt
+> binary isn't available. Build tools live only in the build stage; the final
+> runtime image stays slim.
+
 ---
 
 ## Part 4 — Make the GHCR package public
@@ -199,6 +217,9 @@ That prints the public URL. Flags that matter:
 - `--ingress external` — exposes it to the internet.
 - `--min-replicas 0` — scales to zero when idle (free when no traffic; the
   tradeoff is a short cold start on the first request after idle).
+
+At this point the live app runs against an in-container SQLite file that resets
+on every deploy. Part 7 wires it to Turso so the data actually survives.
 
 ---
 
@@ -302,6 +323,104 @@ couple of minutes.
 
 ---
 
+## Part 7 — Persistence via Turso
+
+Azure Container Apps' filesystem is **ephemeral** — every new revision (every
+push to `main`) ships a fresh container with no carryover of disk state. Without
+an external store, every deploy wipes the DB. We use **Turso** — a free
+SQLite-compatible cloud DB — to hold the live app's data outside the deploy
+cycle. Azure Files volumes would also work, but they're not on the free tier;
+Turso is.
+
+### 7a. Sign up for Turso and create a database
+
+1. Go to **https://turso.tech** and sign up (GitHub login is fastest; no card
+   required).
+2. From the dashboard, **Create Database** → pick **"New Database"** (the
+   "Upload SQLite File" tab would import your local DB *including the seed data*,
+   which is the opposite of what we want in production). Name it `meekcatdb`
+   (or anything; you'll reference it via URL). For the region, pick the closest
+   to your Container App — for `brazilsouth`, an East-US region (`aws-us-east-1`)
+   is the closest free option.
+3. After creation, copy the **Database URL**. It looks like:
+
+   ```
+   libsql://meekcatdb-<your-username>.<region>.turso.io
+   ```
+
+### 7b. Generate a database token
+
+> **Critical gotcha — there are two distinct token types in Turso.**
+> **API tokens** authenticate against the management API (creating DBs,
+> listing groups, billing); they are **rejected** when used as a connection auth
+> header. **Database tokens** (or group tokens) authenticate libSQL client
+> connections to a specific DB — this is what `@libsql/client` needs. Using the
+> wrong type gives a `LibsqlError: SERVER_ERROR: Server returned HTTP status 401`
+> that looks identical to a wrong-value bug.
+
+In the Turso dashboard, navigate to the **specific database** you just created
+(not a global tokens page). Open its token management → **Create Token** with a
+long expiry → copy the full `ey...` JWT.
+
+### 7c. Store the token as a Container Apps secret
+
+Container Apps has a built-in secret store; the token lives there encrypted and
+is referenced (not duplicated) in the env vars. Easiest path is the Portal:
+
+**meekcat** Container App → **Settings** → **Secrets** → **Add** → name
+`database-auth-token`, value `<paste your token>`. Make sure no whitespace or
+newline crept in (paste via Notepad++ first if you copied from a long-wrapping
+UI element).
+
+CLI alternative, capturing the token into a PowerShell variable to dodge any
+shell-quoting pitfalls:
+
+```powershell
+$token = "<paste your token between these quotes>"
+az containerapp secret set --name meekcat --resource-group meekcat-rg --secrets "database-auth-token=$token"
+```
+
+### 7d. Wire the env vars
+
+The app reads two env vars: `DATABASE_URL` (plain value, fine in cleartext) and
+`DATABASE_AUTH_TOKEN` (pulls from the secret store via Container Apps'
+`secretref:` syntax). The prefix tells Container Apps to dereference the named
+secret at container startup:
+
+```
+az containerapp update --name meekcat --resource-group meekcat-rg --set-env-vars "DATABASE_URL=libsql://meekcatdb-<your-username>.<region>.turso.io" "DATABASE_AUTH_TOKEN=secretref:database-auth-token"
+```
+
+This creates a new revision. Wait ~30 seconds, then verify:
+
+```
+az containerapp revision list -g meekcat-rg -n meekcat -o table
+```
+
+The new revision should come up `Healthy / Provisioned`. Open the live URL —
+Board and Roadmap should load empty (fresh Turso DB with just the schema we
+create on startup; no seed in production).
+
+### 7e. Verify persistence end-to-end
+
+1. Add a task on the Board called something memorable like "Survives deploy".
+2. Trigger a full pipeline rebuild + redeploy:
+
+   ```
+   git commit --allow-empty -m "verify persistence"
+   git push origin main
+   ```
+
+3. Wait for the Actions run to go green, then reload the live URL. The task
+   should still be there. That's the entire persistence loop closed: new
+   container, new revision, new image SHA, same data.
+
+Optional victory lap: in the Turso dashboard, open the DB's SQL shell and run
+`SELECT * FROM board_tasks;`. You should see your row with its `created_at`
+timestamp. The DB lives outside the deploy cycle entirely now.
+
+---
+
 ## Everyday operations
 
 Ship a new version (with CD set up):
@@ -322,17 +441,27 @@ See revisions / which one is live:
 az containerapp revision list -g meekcat-rg -n meekcat -o table
 ```
 
-Stream logs:
+Stream logs (live tail; falls back to historical via the Portal if no replica is running):
 
 ```
 az containerapp logs show -g meekcat-rg -n meekcat --follow
 ```
 
-Tear everything down (removes all resources in one shot):
+Rotate the Turso token (re-set the secret; new revisions pick up the new value):
+
+```powershell
+$token = "<paste new token>"
+az containerapp secret set --name meekcat --resource-group meekcat-rg --secrets "database-auth-token=$token"
+az containerapp update --name meekcat --resource-group meekcat-rg --revision-suffix tokenrotate
+```
+
+Tear everything down (removes all Azure resources in one shot):
 
 ```
 az group delete --name meekcat-rg --yes --no-wait
 ```
+
+(Turso lives outside Azure; delete the DB from the Turso dashboard separately if you also want to tear that down.)
 
 ---
 
@@ -343,14 +472,17 @@ az group delete --name meekcat-rg --yes --no-wait
 | GitHub Actions                         | Free (public repo; 2,000 min/mo free if private)|
 | GHCR (public image)                    | Free                                            |
 | Azure Container Apps (scale-to-zero)   | Free within the monthly grant for low traffic   |
+| Turso (Starter plan)                   | Free — 500 DBs, 5 GB, 1B reads/month, no card   |
 | Entra app / SP / federated cred / RBAC | Free                                            |
 | Deployments / new revisions            | Free (no per-deploy charge)                     |
 
 Default **single-revision mode** means each deploy replaces the previous
 revision, so you don't pay for multiple running copies.
 
-> ⚠️ Avoid **Azure Container Registry (ACR)** for the free goal — even its Basic
-> tier (~$5/mo) has no free allowance. That's why this setup uses GHCR instead.
+> ⚠️ Avoid **Azure Container Registry (ACR)** and **Azure Files** if your goal
+> is $0. ACR's Basic tier (~$5/mo) has no free allowance, and Azure Files
+> mounts on Container Apps require Standard storage with its own per-GB cost.
+> That's why this setup uses GHCR for images and Turso for data instead.
 
 ---
 
@@ -361,8 +493,11 @@ revision, so you don't pay for multiple running copies.
 | CEP rejected during Azure sign-up                    | Use `90470-440` (no dot); set Country = Brazil first                 |
 | `az` not found after install                         | Open a fresh terminal / restart the IDE (stale PATH)                 |
 | Docker build fails at `RUN npm run build`            | Add `tailwindcss` + `@tailwindcss/vite` to `client/package.json`    |
+| Docker build fails on `prebuild-install` (better-sqlite3 / libsql) | Use `node:20-bookworm-slim` (glibc) for the server stages and install `python3 make g++` in the build stage so `node-gyp` can compile from source. |
 | GHCR push returns 403                                | Ensure `permissions: packages: write` on the `docker` job           |
 | Container App won't pull the image                   | Make the GHCR package **Public**                                     |
 | `azure/login` fails in CI                            | Ensure `permissions: id-token: write` and the federated subject matches `repo:<owner>/<repo>:ref:refs/heads/main` |
 | `AADSTS70025: ... has no configured federated identity credentials` | The app registration has **no** federated credential — add one (Part 6b). Confirm with `az ad app federated-credential list --id <APP_ID> -o table`. |
 | `AADSTS700213: No matching federated identity record` | A credential exists but the subject doesn't match. It's **case-sensitive** — use your repo's exact casing (e.g. `repo:Brannach/MeekCat:ref:refs/heads/main`, from the Actions log). |
+| `LibsqlError: SERVER_ERROR: Server returned HTTP status 401` from Turso | The auth token is wrong. The most common cause is using an **API token** instead of a **database token** — only the latter authorizes libSQL connections. Generate a new DB-scoped token from the Turso dashboard's per-DB token settings, paste it via `az containerapp secret set "database-auth-token=$token"`, and force a new revision. |
+| Container env shows `DATABASE_AUTH_TOKEN` with `value: secretref:database-auth-token` instead of `secretRef: database-auth-token` | The `secretref:` prefix didn't get interpreted as a secret reference — the env var contains the literal string. Re-run `az containerapp update --set-env-vars "DATABASE_AUTH_TOKEN=secretref:database-auth-token"` with explicit quotes; the correct shape (camelCase, no `value:` field) shows up in `az containerapp show ... --query "properties.template.containers[0].env"`. |
