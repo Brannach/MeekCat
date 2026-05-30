@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { db, init, resetAll, seedIfEmpty } = require('./db');
+const { STATUSES, PRIORITIES, CATEGORIES, DEFAULT_STATUS, DEFAULT_PRIORITY } = require('./constants');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,23 +21,20 @@ app.get('/api/hello', (req, res) => {
 });
 
 // --- Board ------------------------------------------------------------------
-const STATUSES = ['todo', 'in-progress', 'done'];
-const PRIORITIES = ['low', 'medium', 'high'];
-
 app.get('/api/board/tasks', a(async (req, res) => {
   const r = await db.execute('SELECT id, title, status, priority FROM board_tasks ORDER BY id');
   res.json(r.rows);
 }));
 
 app.post('/api/board/tasks', a(async (req, res) => {
-  const { title, priority = 'medium' } = req.body || {};
+  const { title, priority = DEFAULT_PRIORITY } = req.body || {};
   const trimmed = typeof title === 'string' ? title.trim() : '';
   if (!trimmed) return res.status(400).json({ error: 'title is required' });
   if (!PRIORITIES.includes(priority)) return res.status(400).json({ error: 'invalid priority' });
 
   const insert = await db.execute({
     sql: 'INSERT INTO board_tasks (title, status, priority) VALUES (?, ?, ?)',
-    args: [trimmed, 'todo', priority],
+    args: [trimmed, DEFAULT_STATUS, priority],
   });
   const id = Number(insert.lastInsertRowid);
   const task = await db.execute({
@@ -90,7 +88,6 @@ app.delete('/api/board/tasks/:id', a(async (req, res) => {
 }));
 
 // --- Roadmap ----------------------------------------------------------------
-const CATEGORIES = ['planning', 'strategy', 'dev', 'bi'];
 const isIsoDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 app.get('/api/roadmap/items', a(async (req, res) => {
@@ -161,4 +158,5 @@ app.use((err, req, res, next) => {
   }
 })();
 
+module.exports = { STATUSES, PRIORITIES, CATEGORIES };
 module.exports = app;

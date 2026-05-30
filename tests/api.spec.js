@@ -1,5 +1,9 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
+import {DEFAULT_CATEGORY} from "../server/constants";
+const { STATUSES, PRIORITIES, CATEGORIES, DEFAULT_STATUS, DEFAULT_PRIORITY } = require('../server/constants.js');
+const A_VALID_STATUS = STATUSES[1];
+const A_VALID_PRIORITY = PRIORITIES[0];
 
 test.describe('API', () => {
     test.beforeEach(async ({ request }) => {
@@ -33,28 +37,38 @@ test.describe('API', () => {
 
     test('POST /api/board/tasks creates a task', async ({ request }) => {
         const res = await request.post('/api/board/tasks', {
-            data: { title: 'API Task', priority: 'high' },
+            data: { title: 'API Task', priority: A_VALID_PRIORITY },
         });
         expect(res.status()).toBe(201);
         const body = await res.json();
         expect(body.title).toBe('API Task');
-        expect(body.priority).toBe('high');
-        expect(body.status).toBe('todo');
+        expect(body.priority).toBe(A_VALID_PRIORITY);
+        expect(body.status).toBe(DEFAULT_STATUS);
         expect(typeof body.id).toBe('number');
     });
 
-    test('POST /api/board/tasks defaults priority to medium', async ({ request }) => {
+    test('POST /api/board/tasks defaults priority to default', async ({ request }) => {
         const res = await request.post('/api/board/tasks', { data: { title: 'Default Priority' } });
         expect(res.status()).toBe(201);
-        expect((await res.json()).priority).toBe('medium');
+        expect((await res.json()).priority).toBe(DEFAULT_PRIORITY);
     });
 
     test('POST /api/board/tasks returns 400 when title is missing', async ({ request }) => {
-        const res = await request.post('/api/board/tasks', { data: { priority: 'low' } });
+        const res = await request.post('/api/board/tasks', { data: { priority: A_VALID_PRIORITY } });
         expect(res.status()).toBe(400);
         expect((await res.json()).error).toBe('title is required');
     });
 
+    for (const priority of PRIORITIES) {
+        test(`POST /api/board/tasks accepts priority "${priority}"`, async ({ request }) => {
+            const res = await request.post('/api/board/tasks', {
+                data: { title: `Task ${priority}`, priority },
+            });
+            expect(res.status()).toBe(201);
+            expect((await res.json()).priority).toBe(priority);
+        });
+    }
+    
     test('POST /api/board/tasks returns 400 for invalid priority', async ({ request }) => {
         const res = await request.post('/api/board/tasks', { data: { title: 'Bad Priority', priority: 'urgent' } });
         expect(res.status()).toBe(400);
@@ -65,17 +79,17 @@ test.describe('API', () => {
         const created = await (await request.post('/api/board/tasks', { data: { title: 'Original' } })).json();
 
         const res = await request.patch(`/api/board/tasks/${created.id}`, {
-            data: { title: 'Updated', status: 'in-progress', priority: 'low' },
+            data: { title: 'Updated', status: DEFAULT_STATUS, priority: DEFAULT_PRIORITY },
         });
         expect(res.status()).toBe(200);
         const body = await res.json();
         expect(body.title).toBe('Updated');
-        expect(body.status).toBe('in-progress');
-        expect(body.priority).toBe('low');
+        expect(body.status).toBe(DEFAULT_STATUS);
+        expect(body.priority).toBe(DEFAULT_PRIORITY);
     });
 
     test('PATCH /api/board/tasks/:id returns 404 for unknown id', async ({ request }) => {
-        const res = await request.patch('/api/board/tasks/99999', { data: { status: 'done' } });
+        const res = await request.patch('/api/board/tasks/99999', { data: { status: A_VALID_STATUS } });
         expect(res.status()).toBe(404);
     });
 
@@ -111,19 +125,19 @@ test.describe('API', () => {
 
     test('POST /api/roadmap/items creates an item', async ({ request }) => {
         const res = await request.post('/api/roadmap/items', {
-            data: { category: 'dev', title: 'API Item', start: '2026-01-01', end: '2026-03-31', percent: 50 },
+            data: { category: DEFAULT_CATEGORY, title: 'API Item', start: '2026-01-01', end: '2026-03-31', percent: 50 },
         });
         expect(res.status()).toBe(201);
         const body = await res.json();
         expect(body.title).toBe('API Item');
-        expect(body.category).toBe('dev');
+        expect(body.category).toBe(DEFAULT_CATEGORY);
         expect(body.percent).toBe(50);
         expect(typeof body.id).toBe('number');
     });
 
     test('POST /api/roadmap/items returns 400 when title is missing', async ({ request }) => {
         const res = await request.post('/api/roadmap/items', {
-            data: { category: 'dev', start: '2026-01-01', end: '2026-03-31' },
+            data: { category: DEFAULT_CATEGORY, start: '2026-01-01', end: '2026-03-31' },
         });
         expect(res.status()).toBe(400);
         expect((await res.json()).error).toBe('title is required');
@@ -139,7 +153,7 @@ test.describe('API', () => {
 
     test('POST /api/roadmap/items returns 400 when end is before start', async ({ request }) => {
         const res = await request.post('/api/roadmap/items', {
-            data: { category: 'dev', title: 'Item', start: '2026-06-01', end: '2026-01-01' },
+            data: { category: DEFAULT_CATEGORY, title: 'Item', start: '2026-06-01', end: '2026-01-01' },
         });
         expect(res.status()).toBe(400);
         expect((await res.json()).error).toBe('end must be on or after start');
