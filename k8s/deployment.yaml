@@ -1,0 +1,22 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meekcat
+  labels:
+    app: meekcat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meekcat
+  template:
+    metadata:
+      labels:
+        app: meekcat
+    spec:
+      containers:
+        - name: meekcat
+          image: meekcat:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
